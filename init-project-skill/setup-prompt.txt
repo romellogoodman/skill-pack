@@ -1,0 +1,18 @@
+Set up the /init-project global skill for Claude Code. All the files you need are in this folder (Desktop/init-project-skill/). Do the following:
+
+1. Create the global skill directory and copy the skill file:
+   - mkdir -p ~/.claude/skills/init-project
+   - Copy SKILL.md into ~/.claude/skills/init-project/SKILL.md
+
+2. Set up the prototype boilerplate that the skill references:
+   - mkdir -p ~/code/prototype-boilerplate/.claude/commands
+   - Copy CLAUDE.md into ~/code/prototype-boilerplate/CLAUDE.md
+   - Copy commit.md into ~/code/prototype-boilerplate/.claude/commands/commit.md
+   - Copy commit-push-pr.md into ~/code/prototype-boilerplate/.claude/commands/commit-push-pr.md
+
+3. Verify everything is in place by listing:
+   - ~/.claude/skills/init-project/
+   - ~/code/prototype-boilerplate/CLAUDE.md
+   - ~/code/prototype-boilerplate/.claude/commands/
+
+After setup, /init-project will be available globally as a slash command in Claude Code.
