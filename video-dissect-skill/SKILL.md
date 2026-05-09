@@ -1,14 +1,16 @@
+---
+name: video-dissect
+description: Analyze a video by extracting frames with ffmpeg and producing a detailed scene-by-scene breakdown of its contents. Use when the user wants to dissect, transcribe, summarize, or otherwise understand the contents of a video file.
+allowed-tools: Bash(ffprobe *) Bash(ffmpeg *) Bash(mkdir *) Bash(ls *) Read
+---
+
 # Video Dissect
 
 Analyze a video by extracting frames with ffmpeg and describing what's happening scene by scene.
 
 ## Usage
 
-```
-/video-dissect <path-to-video>
-```
-
-If no path is provided, ask the user for the video file path.
+Invoked with a path to a video file. If no path is provided, ask the user for the video file path.
 
 ## Instructions
 
