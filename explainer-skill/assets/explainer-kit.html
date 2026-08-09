@@ -1,0 +1,628 @@
+<!-- ============================================================================
+     EXPLAINER KIT — drop-in runtime for interactive explainer pages.
+
+     Copy the <style> and <script> blocks below into your page verbatim.
+     Self-contained: no external requests, no build step, no dependencies.
+
+     Markup contract (see reference/components.md for full examples):
+
+       Tooltip    <span class="ex-term" data-ex-tip="definition">term</span>
+       Section    <section data-ex-section="Section title"> ... </section>
+       Field      <input data-ex-field data-ex-label="Pipe width" data-ex-unit="Mbps">
+                  also select / textarea / checkbox, or any container holding radios
+       Mirror     <span data-ex-value-of="field-key"></span>
+       Quiz       <div class="ex-quiz" data-ex-q="Question?" data-ex-answer="1">
+                    <button class="ex-opt">A</button><button class="ex-opt">B</button>
+                  </div>
+       Custom     Explainer.register({ id, label, section, get: () => 'value' })
+
+     The copy bar mounts itself. Everything the reader touches ends up in
+     Explainer.snapshot() — the markdown they paste back into the chat.
+     ============================================================================ -->
+
+<style>
+  /* --- Explainer kit: mechanics only. Restyle freely; keep the class names. --- */
+  :root {
+    --ex-accent: #3a5ccc;
+    --ex-fg: #14161c;
+    --ex-muted: #656d7c;
+    --ex-bg: #ffffff;
+    --ex-surface: #f2f4f8;
+    --ex-border: #d7dbe4;
+    --ex-ok: #0d7346;
+    --ex-bad: #b1271b;
+    --ex-shadow: 0 10px 34px rgba(14, 18, 28, 0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ex-accent: #8fa8ff;
+      --ex-fg: #e8eaf0;
+      --ex-muted: #9aa3b4;
+      --ex-bg: #14161b;
+      --ex-surface: #1e222a;
+      --ex-border: #333a47;
+      --ex-ok: #4fc98a;
+      --ex-bad: #ff8b7e;
+      --ex-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ex-accent: #8fa8ff;
+    --ex-fg: #e8eaf0;
+    --ex-muted: #9aa3b4;
+    --ex-bg: #14161b;
+    --ex-surface: #1e222a;
+    --ex-border: #333a47;
+    --ex-ok: #4fc98a;
+    --ex-bad: #ff8b7e;
+    --ex-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Canvas: prose sits at a measure, figures break out of it.
+     Mirrors .ex-canvas in explainer-kit.scss — keep the two in step. */
+  .ex-canvas {
+    --ex-measure: 50rem;
+    --ex-breakout: 9rem;
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(1.25rem, 1fr)
+      [wide-start] minmax(0, var(--ex-breakout))
+      [text-start] min(var(--ex-measure), 100% - 2.5rem)
+      [text-end] minmax(0, var(--ex-breakout))
+      [wide-end] minmax(1.25rem, 1fr)
+      [full-end];
+  }
+  .ex-canvas > * { grid-column: text; }
+  .ex-canvas > [data-ex-section] {
+    grid-column: full;
+    display: grid;
+    grid-template-columns: subgrid;
+    row-gap: inherit;
+  }
+  .ex-canvas > [data-ex-section] > * { grid-column: text; }
+  /* After the section rules on purpose: identical specificity, so source order
+     decides, and breaking out of the measure has to win. */
+  .ex-canvas .ex-wide { grid-column: wide; }
+  .ex-canvas .ex-full { grid-column: full; }
+
+  /* Tooltip term */
+  .ex-term {
+    border-bottom: 1px dotted currentColor;
+    cursor: help;
+    text-underline-offset: 3px;
+  }
+  .ex-term:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 2px; border-radius: 2px; }
+  #ex-tip {
+    position: fixed;
+    z-index: 9999;
+    max-width: min(30ch, calc(100vw - 24px));
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--ex-border);
+    border-radius: 8px;
+    background: var(--ex-bg);
+    color: var(--ex-fg);
+    box-shadow: var(--ex-shadow);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  #ex-tip.is-on { opacity: 1; }
+
+  /* Quiz */
+  .ex-quiz { border: 1px solid var(--ex-border); border-radius: 10px; padding: 1rem 1.1rem; background: var(--ex-surface); }
+  .ex-quiz .ex-q { font-weight: 600; margin: 0 0 0.75rem; }
+  .ex-opts { display: grid; gap: 0.5rem; }
+  .ex-opt {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--ex-border);
+    border-radius: 8px;
+    background: var(--ex-bg);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .ex-opt:hover:not([data-ex-state]) { border-color: var(--ex-accent); }
+  .ex-opt:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
+  .ex-opt[data-ex-state="right"] { border-color: var(--ex-ok); color: var(--ex-ok); font-weight: 600; }
+  .ex-opt[data-ex-state="wrong"] { border-color: var(--ex-bad); color: var(--ex-bad); text-decoration: line-through; }
+  .ex-opt[data-ex-state]::after { float: right; margin-left: 0.5rem; }
+  .ex-opt[data-ex-state="right"]::after { content: "✓"; }
+  .ex-opt[data-ex-state="wrong"]::after { content: "✗"; }
+  .ex-why { margin: 0.75rem 0 0; font-size: 0.9rem; line-height: 1.5; color: var(--ex-muted); }
+  .ex-why[hidden] { display: none; }
+
+  /* Copy bar, toast, fallback panel */
+  .ex-bar {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.55rem 0.5rem 0.85rem;
+    border: 1px solid var(--ex-border);
+    border-radius: 999px;
+    background: var(--ex-bg);
+    box-shadow: var(--ex-shadow);
+    font-size: 0.85rem;
+    color: var(--ex-fg);
+  }
+  .ex-bar__count { color: var(--ex-muted); white-space: nowrap; }
+  .ex-btn {
+    padding: 0.45rem 0.85rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--ex-accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ex-btn--ghost { background: transparent; color: var(--ex-muted); border-color: var(--ex-border); font-weight: 400; }
+  .ex-btn:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
+  .ex-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 74px;
+    z-index: 9999;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    background: var(--ex-fg);
+    color: var(--ex-bg);
+    font-size: 0.85rem;
+    box-shadow: var(--ex-shadow);
+  }
+  /* Shown only when the clipboard API is blocked. Not a modal: nothing is
+     covered, nothing is trapped — it parks above the bar, pre-selected. */
+  .ex-recover {
+    position: fixed;
+    right: 16px;
+    bottom: 74px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: min(560px, calc(100vw - 32px));
+    padding: 0.9rem;
+    border: 1px solid var(--ex-border);
+    border-radius: 12px;
+    background: var(--ex-bg);
+    color: var(--ex-fg);
+    box-shadow: var(--ex-shadow);
+  }
+  .ex-recover p { margin: 0; font-size: 0.84rem; color: var(--ex-muted); }
+  .ex-recover textarea {
+    height: 40vh;
+    max-height: 340px;
+    padding: 0.75rem;
+    border: 1px solid var(--ex-border);
+    border-radius: 8px;
+    background: var(--ex-surface);
+    color: var(--ex-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .ex-recover__row { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  @media (prefers-reduced-motion: reduce) { #ex-tip { transition: none; } }
+  @media print { .ex-bar, .ex-toast, #ex-tip { display: none !important; } }
+</style>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "explainer:" + slug(document.title || "untitled");
+  var custom = [];
+  var touched = Object.create(null);
+  var tip = null;
+  var tipAnchor = null;
+
+  function slug(s) {
+    return String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "").slice(0, 60) || "x";
+  }
+  function text(el) { return (el.textContent || "").replace(/\s+/g, " ").trim(); }
+  function esc(s) { return window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"); }
+  function sectionOf(el) {
+    var s = el.closest("[data-ex-section]");
+    return s ? s.getAttribute("data-ex-section") : "";
+  }
+
+  /* ---------- persistence (localStorage can throw in sandboxed frames) ---------- */
+  var saved = (function () {
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; }
+  })();
+  function persist() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ f: fieldState(), q: quizState(), t: touched }));
+    } catch (e) { /* private mode or sandboxed frame — session still works, just not sticky */ }
+  }
+
+  /* ---------- fields ---------- */
+  function fieldEls() { return [].slice.call(document.querySelectorAll("[data-ex-field]")); }
+  function fieldKey(el) {
+    return el.getAttribute("data-ex-key") || el.id ||
+      slug(el.getAttribute("data-ex-label") || el.name || "field");
+  }
+  function fieldLabel(el) {
+    return el.getAttribute("data-ex-label") || el.getAttribute("aria-label") || el.name || fieldKey(el);
+  }
+  function checkedLabel(input) {
+    var lab = input.closest("label");
+    if (lab) { var t = text(lab); if (t) return t; }
+    if (input.id) {
+      var forLab = document.querySelector('label[for="' + esc(input.id) + '"]');
+      if (forLab) return text(forLab);
+    }
+    return input.value;
+  }
+  /* Two representations, deliberately different:
+     rawValue()   -> what a human reads in the export ("Across the ocean")
+     storeValue() -> what round-trips through localStorage ("far")
+     Conflating them silently resets <select> to its first option on reload. */
+  function rawValue(el) {
+    var tag = el.tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
+      if (el.type === "checkbox") return el.checked ? "yes" : "no";
+      if (el.type === "radio") {
+        var picked = document.querySelector('input[name="' + esc(el.name) + '"]:checked');
+        return picked ? checkedLabel(picked) : "";
+      }
+      if (tag === "SELECT" && el.selectedIndex >= 0) return el.options[el.selectedIndex].text;
+      return el.value;
+    }
+    // container (fieldset / div) wrapping radios or checkboxes
+    var on = [].slice.call(el.querySelectorAll("input:checked"));
+    return on.map(checkedLabel).join(", ");
+  }
+  function storeValue(el) {
+    var tag = el.tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
+      if (el.type === "checkbox") return el.checked;
+      if (el.type === "radio") {
+        var picked = document.querySelector('input[name="' + esc(el.name) + '"]:checked');
+        return picked ? picked.value : "";
+      }
+      return el.value;
+    }
+    return [].slice.call(el.querySelectorAll("input:checked")).map(function (i) { return i.value; });
+  }
+  function displayValue(el) {
+    var v = rawValue(el);
+    var unit = el.getAttribute("data-ex-unit");
+    return v !== "" && unit ? v + " " + unit : v;
+  }
+  function setValue(el, v) {
+    var tag = el.tagName;
+    if (tag === "INPUT" && el.type === "checkbox") { el.checked = v === true || v === "yes"; return; }
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
+      if (el.type === "radio") {
+        var one = document.querySelector('input[name="' + esc(el.name) + '"][value="' + esc(String(v)) + '"]');
+        if (one) one.checked = true;
+        return;
+      }
+      el.value = v;
+      return;
+    }
+    var want = (Array.isArray(v) ? v : [v]).map(String);
+    [].slice.call(el.querySelectorAll("input")).forEach(function (i) {
+      i.checked = want.indexOf(i.value) > -1;
+    });
+  }
+  function fieldState() {
+    var out = {};
+    fieldEls().forEach(function (el) { out[fieldKey(el)] = storeValue(el); });
+    return out;
+  }
+  function isEmptyStored(v) {
+    return v === "" || v == null || (Array.isArray(v) && !v.length);
+  }
+  function mirror(el) {
+    var k = fieldKey(el);
+    [].slice.call(document.querySelectorAll('[data-ex-value-of="' + esc(k) + '"]')).forEach(function (m) {
+      m.textContent = displayValue(el);
+    });
+  }
+
+  /* ---------- quizzes ---------- */
+  function quizEls() { return [].slice.call(document.querySelectorAll(".ex-quiz")); }
+  function quizKey(q) { return q.getAttribute("data-ex-key") || q.id || slug(q.getAttribute("data-ex-q")); }
+  function options(q) { return [].slice.call(q.querySelectorAll(".ex-opt")); }
+  function answerIndex(q) { return parseInt(q.getAttribute("data-ex-answer"), 10); }
+
+  function whyEl(q) {
+    var w = q.querySelector(".ex-why");
+    if (!w) { w = document.createElement("p"); w.className = "ex-why"; w.hidden = true; q.appendChild(w); }
+    return w;
+  }
+  function pick(q, idx, replay) {
+    var opts = options(q);
+    var correct = answerIndex(q);
+    var right = idx === correct;
+    opts.forEach(function (o, i) {
+      o.removeAttribute("data-ex-state");
+      o.setAttribute("aria-pressed", String(i === idx));
+      if (i === idx) o.setAttribute("data-ex-state", right ? "right" : "wrong");
+      else if (!right && i === correct) o.setAttribute("data-ex-state", "right");
+    });
+    q.setAttribute("data-ex-picked", String(idx));
+    if (!replay) q.setAttribute("data-ex-tries", String((parseInt(q.getAttribute("data-ex-tries"), 10) || 0) + 1));
+    var why = opts[idx] && opts[idx].getAttribute("data-ex-why") || q.getAttribute("data-ex-why");
+    if (why) { var w = whyEl(q); w.textContent = why; w.hidden = false; }
+    if (!replay) { persist(); refreshBar(); }
+  }
+  function quizState() {
+    var out = {};
+    quizEls().forEach(function (q) {
+      var p = q.getAttribute("data-ex-picked");
+      if (p !== null) out[quizKey(q)] = { p: +p, n: +(q.getAttribute("data-ex-tries") || 1) };
+    });
+    return out;
+  }
+  function score() {
+    var right = 0, answered = 0, all = quizEls();
+    all.forEach(function (q) {
+      var p = q.getAttribute("data-ex-picked");
+      if (p === null) return;
+      answered++;
+      if (+p === answerIndex(q)) right++;
+    });
+    return { right: right, answered: answered, total: all.length };
+  }
+
+  /* ---------- snapshot ---------- */
+  function block(v) {
+    return String(v).split(/\r?\n/).map(function (l) { return "  > " + l; }).join("\n");
+  }
+  function snapshot() {
+    var groups = [];
+    var index = Object.create(null);
+    function bucket(name) {
+      var k = name || "(page)";
+      if (!index[k]) { index[k] = { name: k, lines: [] }; groups.push(index[k]); }
+      return index[k];
+    }
+    var nodes = [].slice.call(document.querySelectorAll("[data-ex-field], .ex-quiz"));
+    nodes.forEach(function (el) {
+      if (el.classList.contains("ex-quiz")) {
+        var opts = options(el), p = el.getAttribute("data-ex-picked");
+        var q = el.getAttribute("data-ex-q") || text(el.querySelector(".ex-q")) || "question";
+        if (p === null) { bucket(sectionOf(el)).lines.push("- Q: " + q + " -> (unanswered)"); return; }
+        var ok = +p === answerIndex(el);
+        var tries = +(el.getAttribute("data-ex-tries") || 1);
+        var line = '- Q: ' + q + ' -> "' + text(opts[+p]) + '" ' + (ok ? "[correct]" : "[wrong]");
+        if (!ok && opts[answerIndex(el)]) line += ' (answer: "' + text(opts[answerIndex(el)]) + '")';
+        if (tries > 1) line += " (" + tries + " attempts)";
+        bucket(sectionOf(el)).lines.push(line);
+        return;
+      }
+      if (el.type === "radio" && el.closest("[data-ex-field]") !== el) return;
+      var val = displayValue(el);
+      var label = fieldLabel(el);
+      var suffix = touched[fieldKey(el)] ? "" : " (untouched default)";
+      if (val === "") { bucket(sectionOf(el)).lines.push("- " + label + ": (blank)"); return; }
+      if (/\n/.test(val)) bucket(sectionOf(el)).lines.push("- " + label + ":\n" + block(val));
+      else bucket(sectionOf(el)).lines.push("- " + label + ": " + val + suffix);
+    });
+    custom.forEach(function (c) {
+      var v;
+      try { v = c.get(); } catch (e) { v = "(error reading value)"; }
+      if (v == null || v === "") return;
+      var host = c.id && document.getElementById(c.id);
+      bucket(c.section || (host && sectionOf(host)) || "").lines.push(
+        /\n/.test(String(v)) ? "- " + c.label + ":\n" + block(v) : "- " + c.label + ": " + v
+      );
+    });
+
+    var s = score();
+    var head = ["=== Explainer session export ==="];
+    head.push("Page: " + (document.title || "untitled"));
+    if (location.href && location.href.indexOf("about:") !== 0) head.push("URL: " + location.href);
+    head.push("Exported: " + new Date().toISOString());
+    if (s.total) head.push("Quiz: " + s.right + "/" + s.total + " correct (" + s.answered + " answered)");
+    var body = groups.filter(function (g) { return g.lines.length; }).map(function (g) {
+      return "\n## " + g.name + "\n" + g.lines.join("\n");
+    }).join("\n");
+    return head.join("\n") + "\n" + body + "\n\n=== end of export ===";
+  }
+
+  /* ---------- clipboard, with fallbacks for sandboxed frames ---------- */
+  function copy(str) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Resolve() wraps it: in some sandboxed frames writeText throws instead of rejecting.
+        return Promise.resolve(navigator.clipboard.writeText(str))
+          .then(function () { return true; }, legacy);
+      }
+    } catch (e) { /* fall through to the legacy path */ }
+    return Promise.resolve(legacy());
+    function legacy() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = str;
+        ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+  }
+
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.className = "ex-toast";
+    t.setAttribute("role", "status");
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  function recover(str) {
+    var old = document.querySelector(".ex-recover");
+    if (old) old.remove();
+    var wrap = document.createElement("div");
+    wrap.className = "ex-recover";
+    wrap.setAttribute("role", "group");
+    wrap.setAttribute("aria-label", "Your session export");
+    wrap.innerHTML =
+      "<p>This browser blocked the clipboard. Copy it by hand (Ctrl/Cmd&nbsp;+&nbsp;C) — it&rsquo;s already selected.</p>" +
+      "<textarea readonly></textarea>" +
+      '<div class="ex-recover__row"><button class="ex-btn ex-btn--ghost" data-ex-close>Close</button></div>';
+    var ta = wrap.querySelector("textarea");
+    ta.value = str;
+    document.body.appendChild(wrap);
+    ta.focus();
+    ta.select();
+    function close() { wrap.remove(); document.removeEventListener("keydown", onKey); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    wrap.querySelector("[data-ex-close]").addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+  }
+
+  function exportNow() {
+    var str = snapshot();
+    copy(str).then(function (ok) {
+      if (ok) toast("Copied — paste it into the chat");
+      else recover(str);
+    });
+  }
+
+  /* ---------- copy bar ---------- */
+  var bar = null;
+  function refreshBar() {
+    if (!bar) return;
+    var s = score();
+    var fields = fieldEls().filter(function (el) { return touched[fieldKey(el)]; }).length;
+    var bits = [];
+    if (s.total) bits.push(s.answered + "/" + s.total + " answered");
+    if (fields) bits.push(fields + " explored");
+    bar.querySelector(".ex-bar__count").textContent = bits.join(" · ");
+  }
+  function mountBar() {
+    if (bar || document.querySelector("[data-ex-nobar]")) return;
+    bar = document.createElement("div");
+    bar.className = "ex-bar";
+    bar.innerHTML =
+      '<span class="ex-bar__count"></span>' +
+      '<button class="ex-btn" data-ex-copy>Copy my answers</button>' +
+      '<button class="ex-btn ex-btn--ghost" data-ex-reset title="Clear everything on this page">Reset</button>';
+    bar.querySelector("[data-ex-copy]").addEventListener("click", exportNow);
+    bar.querySelector("[data-ex-reset]").addEventListener("click", function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    });
+    document.body.appendChild(bar);
+    refreshBar();
+  }
+
+  /* ---------- tooltips ---------- */
+  function mountTip() {
+    tip = document.createElement("div");
+    tip.id = "ex-tip";
+    tip.setAttribute("role", "tooltip");
+    tip.hidden = true;
+    document.body.appendChild(tip);
+  }
+  function showTip(anchor) {
+    var body = anchor.getAttribute("data-ex-tip");
+    if (!body) return;
+    tipAnchor = anchor;
+    tip.textContent = body;
+    tip.hidden = false;
+    tip.style.left = "0px";
+    tip.style.top = "0px";
+    var a = anchor.getBoundingClientRect();
+    var t = tip.getBoundingClientRect();
+    var left = Math.min(Math.max(8, a.left + a.width / 2 - t.width / 2), window.innerWidth - t.width - 8);
+    var top = a.top - t.height - 8;
+    if (top < 8) top = a.bottom + 8;
+    tip.style.left = Math.round(left) + "px";
+    tip.style.top = Math.round(top) + "px";
+    tip.classList.add("is-on");
+    anchor.setAttribute("aria-describedby", "ex-tip");
+  }
+  function hideTip() {
+    if (!tip) return;
+    tip.classList.remove("is-on");
+    tip.hidden = true;
+    if (tipAnchor) tipAnchor.removeAttribute("aria-describedby");
+    tipAnchor = null;
+  }
+
+  /* ---------- wiring ---------- */
+  function init() {
+    mountTip();
+
+    [].slice.call(document.querySelectorAll(".ex-term")).forEach(function (el) {
+      if (!el.hasAttribute("tabindex")) el.tabIndex = 0;
+      el.addEventListener("mouseenter", function () { showTip(el); });
+      el.addEventListener("mouseleave", hideTip);
+      el.addEventListener("focus", function () { showTip(el); });
+      el.addEventListener("blur", hideTip);
+      el.addEventListener("click", function (e) {
+        e.preventDefault();
+        tipAnchor === el ? hideTip() : showTip(el);
+      });
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") hideTip(); });
+    window.addEventListener("scroll", hideTip, true);
+    window.addEventListener("resize", hideTip);
+
+    fieldEls().forEach(function (el) {
+      var k = fieldKey(el);
+      if (saved.f && Object.prototype.hasOwnProperty.call(saved.f, k) && !isEmptyStored(saved.f[k])) setValue(el, saved.f[k]);
+      mirror(el);
+      var target = el.matches("input, select, textarea") ? el : el;
+      target.addEventListener("input", function () { touched[k] = 1; mirror(el); persist(); refreshBar(); });
+      target.addEventListener("change", function () { touched[k] = 1; mirror(el); persist(); refreshBar(); });
+    });
+    if (saved.t) Object.keys(saved.t).forEach(function (k) { touched[k] = 1; });
+
+    quizEls().forEach(function (q) {
+      var head = q.querySelector(".ex-q");
+      if (!head && q.getAttribute("data-ex-q")) {
+        head = document.createElement("p");
+        head.className = "ex-q";
+        head.textContent = q.getAttribute("data-ex-q");
+        q.insertBefore(head, q.firstChild);
+      }
+      options(q).forEach(function (o, i) {
+        o.type = "button";
+        o.setAttribute("aria-pressed", "false");
+        o.addEventListener("click", function () { pick(q, i); });
+      });
+      var s = saved.q && saved.q[quizKey(q)];
+      if (s) { q.setAttribute("data-ex-tries", String(s.n)); pick(q, s.p, true); }
+    });
+
+    mountBar();
+    refreshBar();
+  }
+
+  window.Explainer = {
+    /** Register a widget whose state isn't a plain form field.
+     *  { id, label, section?, get: () => string } */
+    register: function (entry) { custom.push(entry); refreshBar(); },
+    snapshot: snapshot,
+    copy: exportNow,
+    score: score,
+    mountBar: mountBar,
+    /** Call after mutating state programmatically so the bar/store keep up. */
+    sync: function () { persist(); refreshBar(); }
+  };
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
