@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Your Name" />
+  <title>Document Title</title>
+  <!-- Copy assets/the-proportional-web/ into your project so these paths resolve. -->
+  <link rel="stylesheet" href="the-proportional-web/index.min.css" />
+  <script src="the-proportional-web/index.js"></script>
+</head>
+<body>
+
+<header>
+  <h1 class="title">Document Title</h1>
+  <p class="subtitle">A subtitle, set in the body face</p>
+  <p>Authored by <cite>Your Name</cite>. <span class="version">v0.1.0</span>, licensed under <abbr>MIT</abbr>.</p>
+</header>
+
+<nav id="TOC" role="doc-toc">
+  <h2 id="toc-title">Contents</h2>
+  <ul>
+    <li><a href="#foundations"><span class="toc-section-number">1</span> Foundations</a>
+      <ul>
+        <li><a href="#typography"><span class="toc-section-number">1.1</span> Typography</a></li>
+        <li><a href="#colors"><span class="toc-section-number">1.2</span> Colors</a></li>
+      </ul>
+    </li>
+    <li><a href="#elements"><span class="toc-section-number">2</span> Elements</a></li>
+  </ul>
+</nav>
+
+<!-- Chapters are h1, sections h2, sub-sections h3 (matches the stylesheet as shipped). -->
+<h1 id="foundations">Foundations</h1>
+
+<blockquote>
+  <p>Typography is the craft of endowing human language with a durable visual form.</p>
+  <footer>
+    <span class="author">Robert Bringhurst</span>,
+    <cite>The Elements of Typographic Style</cite>, 2nd edition,
+    <span class="year">2002</span>
+  </footer>
+</blockquote>
+
+<h2 id="typography"><span class="header-section-number">1.1</span> Typography</h2>
+
+<h3><span class="header-section-number">1.1.1</span> A single versatile font</h3>
+
+<p>The first paragraph after a heading is set flush left. Body text is justified and hyphenated, so give the document a <code>lang</code> attribute or the hyphenator stays asleep. Acronyms like <abbr>HTML</abbr> and <abbr>CSS</abbr> are wrapped in <code>&lt;abbr&gt;</code> and come out as small caps; proper nouns you want to distinguish, such as <span class="canonical-name">Alegreya</span>, take the <code>canonical-name</code> class.</p>
+<p>Every following paragraph is indented three characters with no vertical gap between them, exactly as a book would do it. Long or awkward words can be nudged with soft hyphens, like inter&shy;nationali&shy;zation, so the justification engine has somewhere to break.</p>
+<aside>An aside sits in the right margin on wide screens, aligned to the paragraph above it, and collapses inline with a ❧ on narrow ones.</aside>
+<p>The paragraph after an aside continues the flow as though the aside were not there. Emphasis is <em>italic</em>; strong emphasis is <strong>heavier</strong>. Numerals are oldstyle by default: 1657, 2002, 2026.</p>
+
+<h2 id="colors"><span class="header-section-number">1.2</span> Colors</h2>
+
+<p>There are none. Black on white, and the reader’s attention is saved for the things that need it.</p>
+
+<hr />
+
+<h1 id="elements">Elements</h1>
+
+<h2><span class="header-section-number">2.1</span> Lists</h2>
+
+<p>Unordered:</p>
+<ul>
+  <li>Banana</li>
+  <li>Paper boat</li>
+  <li>Cucumber</li>
+</ul>
+
+<p>Ordered lists number themselves, including nested levels:</p>
+<ol>
+  <li>Goals</li>
+  <li>Motivations
+    <ol>
+      <li>Intrinsic</li>
+      <li>Extrinsic</li>
+    </ol>
+  </li>
+  <li>Second-order effects</li>
+</ol>
+
+<h2><span class="header-section-number">2.2</span> Tables &amp; Figures</h2>
+
+<p>Tables lean on a small-caps head and spacing. Wrap one in a figure to indent it and give it a caption:</p>
+
+<figure>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Dimensions</th><th>Position</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Boboli Obelisk</td><td>1.41m &times; 1.41m &times; 4.87m</td><td>43°45&prime;50.78&Prime;N 11°15&prime;3.34&Prime;E</td></tr>
+      <tr><td>Pyramid of Khafre</td><td>215.25m &times; 215.25m &times; 136.4m</td><td>29°58&prime;34&Prime;N 31°07&prime;51&Prime;E</td></tr>
+    </tbody>
+  </table>
+  <figcaption>
+    <span class="author">Table 1</span>,
+    <cite>Two monuments</cite>,
+    <span>dimensions and coordinates</span>
+  </figcaption>
+</figure>
+
+<!-- Image figure:
+<figure>
+  <img src="image.jpg" width="435" height="600" alt="…" />
+  <figcaption>
+    <span class="author">Leonardo Da Vinci</span>,
+    <cite>Vitruvian Man</cite>,
+    <span>c. 1490</span>
+  </figcaption>
+</figure>
+-->
+
+<h2><span class="header-section-number">2.3</span> Code &amp; Details</h2>
+
+<p>Code is set in <span class="canonical-name">Courier Prime</span> and wraps rather than scrolls:</p>
+
+<pre><code>:root {
+  --font-family: "Alegreya", serif;
+  --line-height: 1.20rem;
+  --border-thickness: 1.5px;
+}</code></pre>
+
+<details>
+  <summary>Colophon</summary>
+  <p>Typeset with The Proportional Web by Oskar Wickström, itself after Bringhurst.</p>
+</details>
+
+<footer>Copyright 2026 Your Name</footer>
+
+</body>
+</html>
