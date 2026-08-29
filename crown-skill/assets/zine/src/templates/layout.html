@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="{{metadata.lang}}">
+<head>
+  <meta charset="UTF-8">
+  <title>{{metadata.title}}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+{{!-- Partial calls sit at column 0 on purpose. Handlebars indents every
+     line of a standalone partial's output by the call's own indentation,
+     which corrupts <pre> blocks and any other whitespace-sensitive HTML. --}}
+{{#each content}}
+{{#if (eq frontmatter.template "cover")}}
+{{> cover this}}
+{{else if (eq frontmatter.template "back-cover")}}
+{{> back-cover this}}
+{{else if (eq frontmatter.template "plain")}}
+{{> plain this}}
+{{else}}
+{{> chapter this}}
+{{/if}}
+{{/each}}
+</body>
+</html>

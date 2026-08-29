@@ -1,0 +1,473 @@
+/*
+ * My Book — stylesheet
+ *
+ * A Quarter Letter Portrait trim (4.25 × 5.5 in) rendered by PrinceXML
+ * and imposed by `crown layout`. The typography is the print translation
+ * of Oskar Wickström's "The Proportional Web" first made for
+ * book-weave-watch-wait: Alegreya at 10pt on a 14pt baseline, justified
+ * and hyphenated text with em indents, small-caps headings with a hairline
+ * rule, oldstyle figures, asides floated to the page foot, the lozenge ◊
+ * as ornament. Every vertical measure is a multiple of --line-height.
+ *
+ * Both typography AND page geometry live here. Crown only injects the
+ * config @page when a stylesheet has none, so this file owns the trim.
+ */
+
+/* ---------- Fonts (src/fonts → dist/fonts, beside this file) ---------- */
+
+@font-face {
+  font-family: "Alegreya";
+  src: url("fonts/Alegreya[wght].ttf");
+  font-weight: 400 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Alegreya";
+  src: url("fonts/Alegreya-Italic[wght].ttf");
+  font-weight: 400 900;
+  font-style: italic;
+}
+@font-face {
+  font-family: "Alegreya SC";
+  src: url("fonts/AlegreyaSC-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Alegreya SC";
+  src: url("fonts/AlegreyaSC-Medium.ttf");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Alegreya SC";
+  src: url("fonts/AlegreyaSC-Bold.ttf");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Alegreya SC";
+  src: url("fonts/AlegreyaSC-Italic.ttf");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-Italic.ttf");
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* ---------- Proportions ---------- */
+
+:root {
+  --font-family: "Alegreya", serif;
+  --font-family-caps: "Alegreya SC", serif;
+  --font-family-code: "Courier Prime", monospace;
+  --font-size: 10pt;
+  --line-height: 14pt; /* the baseline unit; everything sits on multiples */
+  --border-thickness: 0.6pt;
+  --text-color: #000;
+  --background-color: #fff;
+  /* Paragraph indent. The web version uses 3ch, but Prince ignores
+     ch units in text-indent, so the same width is set in em. */
+  --indent: 1.5em;
+}
+
+/* ---------- Page geometry ---------- */
+
+/* Symmetric left/right margins on purpose: the decoy first page
+   (stripped after the build by scripts/build.mjs) shifts every page's
+   left/right parity by one, and with no gutter bias there is nothing
+   for that shift to break. If you want a gutter, swap inside/outside
+   here — see book-weave-watch-wait — and say so in CLAUDE.md. */
+@page {
+  size: 4.25in 5.5in;
+  margin: 0.45in 0.45in 0.55in;
+  @bottom-center {
+    content: counter(page);
+    font-family: "Alegreya", serif;
+    font-size: 8.5pt;
+    font-variant-numeric: oldstyle-nums;
+    color: #000;
+  }
+}
+
+/* Cover, front matter, back matter and blanks carry no folio */
+@page unnumbered {
+  @bottom-center { content: none; }
+}
+
+.cover,
+.back-cover,
+.epigraph,
+.colophon,
+.blank,
+.decoy {
+  page: unnumbered;
+}
+
+/* The decoy page absorbs the Prince non-commercial logo and is stripped
+   after the build. Resetting the page counter to 0 here keeps the folios
+   identical to a book that never had it: cover = 1, intro = 3. */
+.decoy {
+  counter-reset: page 0;
+}
+
+/* ---------- Body ---------- */
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  font-weight: 400;
+  line-height: var(--line-height);
+  font-variant-numeric: oldstyle-nums;
+  color: var(--text-color);
+  background: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Sections ---------- */
+
+.chapter,
+.plain {
+  page-break-before: always;
+}
+
+/* Sink chapter openers three lines, like a printed book */
+.chapter h1 {
+  margin-top: calc(var(--line-height) * 3);
+}
+
+/* ---------- Headings ---------- */
+
+h1, h2, h3, h4 {
+  font-weight: 400;
+  line-height: var(--line-height);
+  page-break-after: avoid;
+}
+
+h1 {
+  font-family: var(--font-family-caps);
+  font-size: 13pt;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin: 0 0 calc(var(--line-height) * 2);
+  padding-bottom: calc(var(--line-height) - var(--border-thickness));
+  border-bottom: var(--border-thickness) solid var(--text-color);
+}
+
+h2 {
+  font-family: var(--font-family-caps);
+  font-size: 11pt;
+  letter-spacing: 0.125em;
+  margin: calc(var(--line-height) * 2) 0 var(--line-height);
+}
+
+h3 {
+  font-style: italic;
+  font-size: var(--font-size);
+  margin: var(--line-height) 0 0;
+}
+
+/* ---------- Prose ---------- */
+
+p {
+  margin: 0;
+  text-align: justify;
+  hyphens: auto;
+  prince-hyphenate-before: 3;
+  prince-hyphenate-after: 3;
+  prince-hyphenate-lines: 2;
+  widows: 2;
+  orphans: 2;
+}
+
+/* Web: p + p { text-indent: 3ch } — the same convention in print.
+   aside + p is included because asides float to the page foot, so on
+   the page that paragraph reads as a continuation. */
+p + p,
+aside + p {
+  text-indent: var(--indent);
+}
+
+h1 + p,
+h2 + p,
+h3 + p,
+hr + p,
+blockquote + p,
+ul + p,
+ol + p,
+pre + p {
+  text-indent: 0;
+}
+
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+abbr {
+  font-family: var(--font-family-caps);
+  font-size: 1.05em;
+  letter-spacing: 0.05em;
+}
+
+.canonical-name {
+  font-family: var(--font-family-caps);
+  font-size: 1.05em;
+  letter-spacing: 0.075em;
+}
+
+/* ---------- Ornament ---------- */
+
+/* The web version uses the rotated floral heart (U+2767), which Alegreya
+   doesn't carry. The lozenge (U+25CA) stands in — native to the face. */
+hr {
+  position: relative;
+  display: block;
+  height: var(--line-height);
+  margin: calc(var(--line-height) * 1.5) 0;
+  border: none;
+  color: var(--text-color);
+  page-break-after: avoid;
+}
+hr::before {
+  display: block;
+  content: "";
+  position: absolute;
+  top: calc(var(--line-height) / 2);
+  left: 0;
+  width: 100%;
+  border-top: var(--border-thickness) solid var(--text-color);
+  height: 0;
+}
+hr::after {
+  display: inline-block;
+  content: "\25CA";
+  position: absolute;
+  top: 0;
+  left: calc(50% - 1ch);
+  width: 2ch;
+  text-align: center;
+  font-size: 14pt;
+  line-height: var(--line-height);
+  background: var(--background-color);
+}
+
+/* ---------- Quotations ---------- */
+
+blockquote {
+  margin: var(--line-height) var(--indent);
+  page-break-inside: avoid;
+}
+
+blockquote p {
+  text-indent: 0;
+  text-align: left;
+}
+
+blockquote p:first-of-type::before { content: "\201c"; }
+blockquote p:last-of-type::after { content: "\201d"; }
+
+blockquote footer {
+  margin-top: var(--line-height);
+  font-style: normal;
+  text-align: left;
+}
+
+blockquote .author {
+  display: block;
+  font-family: var(--font-family-caps);
+  font-size: 1.05em;
+  letter-spacing: 0.075em;
+  margin-top: var(--line-height);
+}
+
+blockquote cite {
+  font-style: italic;
+}
+
+/* Epigraph: a quotation alone on a page, sunk toward the middle */
+.epigraph blockquote {
+  margin-top: calc(var(--line-height) * 8);
+}
+
+/* ---------- Asides ---------- */
+
+/* The web floats these into the right margin on wide viewports and folds
+   them inline on narrow ones. A 4.25in page is the narrow viewport, so
+   they float to the foot of the page instead. */
+aside {
+  float: bottom;
+  font-size: 8.5pt;
+  line-height: var(--line-height);
+  margin: var(--line-height) 0 0;
+  page-break-inside: avoid;
+}
+aside p {
+  text-align: left;
+  text-indent: 0;
+}
+aside p:first-of-type::before {
+  content: "\25CA";
+  font-size: 10pt;
+  margin-right: 0.75em;
+}
+
+/* ---------- Lists ---------- */
+
+ul, ol {
+  list-style: none;
+  margin: var(--line-height) 0;
+  padding: 0;
+}
+
+/* em, not ch: Prince drops ch units in margins and the gap vanishes */
+ul li::before {
+  content: "\2022";
+  margin-right: 0.5em;
+}
+
+ol {
+  counter-reset: item;
+}
+
+ol li::before {
+  font-size: 8.5pt;
+  font-weight: 500;
+  content: counters(item, ".") ". ";
+  counter-increment: item;
+}
+
+/* ---------- Code ---------- */
+
+pre, code {
+  font-family: var(--font-family-code);
+}
+
+code {
+  font-size: 0.95em;
+  letter-spacing: -0.025em;
+}
+
+pre {
+  margin: var(--line-height) 0;
+  white-space: pre-wrap;
+  page-break-inside: avoid;
+}
+
+/* ---------- Cover ---------- */
+
+.cover {
+  page-break-before: always;
+  page-break-after: always;
+  text-align: center;
+}
+
+.cover h1 {
+  font-family: var(--font-family-caps);
+  font-size: 21pt;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.1em;
+  line-height: calc(var(--line-height) * 2);
+  border-bottom: none;
+  margin: calc(var(--line-height) * 5) 0 0;
+  padding: 0;
+}
+
+.cover .subtitle {
+  font-style: italic;
+  font-size: 11pt;
+  text-align: center;
+  text-indent: 0;
+  margin-top: var(--line-height);
+}
+
+.cover .author {
+  font-family: var(--font-family-caps);
+  font-size: 11pt;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-indent: 0;
+  margin-top: calc(var(--line-height) * 7);
+}
+
+.cover hr {
+  margin: calc(var(--line-height) * 1.5) 0;
+}
+
+/* ---------- Colophon ---------- */
+
+.colophon p {
+  font-size: 8.5pt;
+  line-height: var(--line-height);
+  text-align: center;
+  text-indent: 0;
+  margin-top: var(--line-height);
+}
+
+.colophon hr::before {
+  content: none;
+}
+.colophon hr::after {
+  position: static;
+  display: inline-block;
+  width: auto;
+}
+.colophon hr {
+  text-align: center;
+}
+
+/* ---------- Back cover ---------- */
+
+.back-cover {
+  page-break-before: always;
+  text-align: center;
+}
+
+.back-cover p {
+  text-align: center;
+  text-indent: 0;
+}
+
+.back-cover .ornament {
+  font-size: 18pt;
+  margin-top: calc(var(--line-height) * 9);
+}
+
+.back-cover .maxim {
+  font-family: var(--font-family-caps);
+  font-size: 10pt;
+  letter-spacing: 0.1em;
+  line-height: calc(var(--line-height) * 1.5);
+  margin-top: calc(var(--line-height) * 2);
+}
+
+.back-cover .site {
+  font-family: var(--font-family-code);
+  font-size: 7.5pt;
+  letter-spacing: -0.025em;
+  margin-top: calc(var(--line-height) * 2);
+}
+
+/* ---------- Links ---------- */
+
+/* Ink is monochrome; links are undecorated. */
+a {
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+/* ---------- Blank faces ---------- */
+
+.blank p,
+.decoy p {
+  margin: 0;
+}

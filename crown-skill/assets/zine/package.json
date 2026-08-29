@@ -1,0 +1,20 @@
+{
+  "name": "book-my-book",
+  "version": "0.1.0",
+  "private": true,
+  "description": "My Book — a quarter-letter zine built with crown and PrinceXML",
+  "type": "module",
+  "scripts": {
+    "dev": "crown dev",
+    "build": "node scripts/build.mjs",
+    "build:raw": "crown build",
+    "watch": "crown watch",
+    "preview:html": "crown preview:html",
+    "preview:pdf": "crown preview:pdf",
+    "doctor": "crown doctor"
+  },
+  "dependencies": {
+    "@romello/crown": "file:../crown",
+    "pdf-lib": "^1.17.1"
+  }
+}
