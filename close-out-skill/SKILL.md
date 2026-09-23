@@ -1,6 +1,6 @@
 ---
 name: close-out
-description: End a Claude Code session gracefully instead of closing the terminal on it — finish and commit reviewed work, stop what the session started, leave a handoff for the next session, say goodbye, then exit. Use when the user says "close out", "wrap up", "let's end here", "goodbye", or mentions /close-out.
+description: End a Claude Code session gracefully instead of closing the terminal on it — finish and commit reviewed work, stop what the session started, leave a handoff for the next session, say goodbye, then exit. Use when the user says "close out", "wrap up", or mentions /close-out.
 argument-hint: "[what changed]"
 ---
 
@@ -33,8 +33,11 @@ committing it anyway, and never `git stash` or discard it.
    - Run the project's checks, if it defines any: scripts named `typecheck`,
      `lint`, `test`, `build`, `smoke` in `package.json`, a `Makefile`,
      `pyproject.toml`, or whatever CLAUDE.md names. Run what exists; do not
-     invent checks the project lacks. Report a failure with its output and
-     fix the cause, then rerun; never skip or narrow the run.
+     invent checks the project lacks; never skip or narrow the run. If a
+     check fails, do not try to fix it here: a fix written now is work the
+     user has not reviewed, which the guard keeps out of the commit anyway.
+     Leave the work uncommitted, put the failure and its output in the
+     report, and skip step 5 so the user can decide.
    - Update the docs the project keeps for agents when the change touches
      what they describe: the `agent_docs/` file CLAUDE.md points at for the
      area, CLAUDE.md's overview if the feature list changed, README if
@@ -49,7 +52,8 @@ committing it anyway, and never `git stash` or discard it.
 2. **Delete what the session left behind**: stray probe output, scratch
    files written into the project, temporary branches or worktrees nothing
    references. Ask before removing anything you are not sure this session
-   created.
+   created. An open question here means the session does not end itself:
+   list what you would remove in the report and skip step 5.
 
 3. **Write the handoff.** Save to memory (the persistent memory directory,
    when the session has one) anything the next session would otherwise have
@@ -70,9 +74,9 @@ committing it anyway, and never `git stash` or discard it.
    ```
 
    It finds the Claude process this shell runs under and sends it SIGTERM,
-   which Claude Code treats as a clean exit. Skip this step only if
-   something in steps 1 or 2 needs the user's decision; then say what, and
-   leave the session open for them.
+   which Claude Code treats as a clean exit. Skip this step only if a check
+   failed in step 1 or something in steps 1 or 2 needs the user's decision;
+   then say what, and leave the session open for them.
 
 ## Report
 

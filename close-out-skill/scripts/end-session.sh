@@ -9,8 +9,15 @@ set -uo pipefail
 self=""
 x=$$
 while [ "$x" -gt 1 ]; do
-  c=$(ps -o comm= -p "$x" 2>/dev/null || true)
+  # comm may be a bare name or a full path; an npm install runs as node
+  # with the claude-code package in its args.
+  c=$(basename "$(ps -o comm= -p "$x" 2>/dev/null || true)")
   if [ "$c" = claude ]; then self=$x; break; fi
+  if [ "$c" = node ]; then
+    case "$(ps -o args= -p "$x" 2>/dev/null || true)" in
+      *claude-code*|*/bin/claude*) self=$x; break ;;
+    esac
+  fi
   x=$(ps -o ppid= -p "$x" 2>/dev/null | tr -d ' ' || true)
   [ -n "$x" ] || break
 done
