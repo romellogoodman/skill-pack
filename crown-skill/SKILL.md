@@ -1,7 +1,7 @@
 ---
 name: crown
 description: Make and maintain printed books with Crown — Romello's Markdown + Handlebars + CSS → PrinceXML → PDF framework at ~/code/crown — and impose the pages onto press sheets with `crown layout`. Use when starting a new book, zine, pamphlet, wrap cover or sticker sheet; editing content or design in an existing ~/code/book-* project; building, proofing, imposing or printing a PDF; debugging Prince paged-media CSS; or changing crown itself. Carries the house conventions every book shares (decoy page for the Prince stamp, @page in styles.css, timestamped snapshots, multiple-of-4 page counts, template dispatch by frontmatter) plus a starter zine kit and the shared build script.
-allowed-tools: Read Write Edit Glob Grep Bash(ls *) Bash(cat *) Bash(cp *) Bash(mkdir *) Bash(npm *) Bash(npx *) Bash(crown *) Bash(node *) Bash(prince *) Bash(pdftoppm *) Bash(pdfinfo *) Bash(open *)
+allowed-tools: Read Write Edit Glob Grep Bash(ls *) Bash(cat *) Bash(cp *) Bash(mkdir *) Bash(git init*) Bash(npm *) Bash(npx *) Bash(crown *) Bash(node *) Bash(prince *) Bash(pdftoppm *) Bash(pdfinfo *) Bash(open *)
 ---
 
 # Crown
@@ -26,7 +26,7 @@ assets/zine/scripts/build.mjs crown build → strip decoy → timestamped snapsh
 - **Prince stamps page 1.** The Prince license here is non-commercial, so every render carries a small logo on its first page. Every book opens with a sacrificial blank (`src/content/000-decoy.md`) that absorbs it and strips that page with pdf-lib after the build. The consequences ripple into margins, folios and page counts — read `print-patterns.md` §1 before touching any of those.
 - **Geometry lives in `styles.css`.** Crown injects an `@page` from `crown.config.js` only when the stylesheet has none (it tests `/@page\s*\{/`). Every book declares its own `@page`, so the config `page` block is documentation. Edit the CSS.
 - **Crown is a symlink.** `node_modules/@romello/crown → ../../crown` (older books alias it as `crown`). Books run crown's `dist/`, so after any change to crown's source run `npm run build` in `~/code/crown` or the books keep running the old code. `crown` is also on PATH globally.
-- **`npx crown doctor`** confirms Node, the config and `prince` (16.2 at `/opt/homebrew/bin/prince`).
+- **`npx crown doctor`** confirms Node, the config and `prince` (16.2 at `/opt/homebrew/bin/prince`). The kit's `scripts/build.mjs` uses `import.meta.dirname`, so it needs Node 20.11 or newer.
 
 ## Which job is this?
 
@@ -58,7 +58,7 @@ assets/zine/scripts/build.mjs crown build → strip decoy → timestamped snapsh
    cp -r <this-skill-dir>/assets/zine ~/code/book-<slug>
    cd ~/code/book-<slug> && git init
    ```
-   Then edit: `package.json` name and description; `crown.config.js` metadata and a `devServer.port` no sibling uses (3000 weave & piet, 3001 flora words, 3002 how-i-made, 3003 drawing-instructions, 3004 the kit); the `TITLE` / `TRIM` / `FORMAT` block at the top of `scripts/build.mjs`; `@page` in `src/styles.css` if the trim isn't quarter-letter. For a flat sheet, a data-driven book or a wrap cover, copy the closest sibling named in `books.md` instead — `crown create` gives a bare project with none of the print conventions.
+   Then edit: `package.json` name and description; `crown.config.js` metadata and a `devServer.port` no sibling uses (3000 weave & piet, 3001 flora words, 3002 how-i-made, 3003 drawing-instructions, 3004 the kit); the `TITLE` / `TRIM` / `FORMAT` block at the top of `scripts/build.mjs`; `@page` in `src/styles.css` if the trim isn't quarter-letter; the `<N>` pages and `<port>` placeholders in `CLAUDE.md`. For a flat sheet, a data-driven book or a wrap cover, copy the closest sibling named in `books.md` instead — `crown create` gives a bare project with none of the print conventions.
 
 3. **Fonts.** The kit's `styles.css` expects Alegreya, Alegreya SC and Courier Prime (OFL, 2.4 MB) in `src/fonts/`:
    ```sh
@@ -94,6 +94,7 @@ Every build lands in its own timestamped folder under `book/`; nothing is overwr
 **Proof every page — the build log can't.** Rasterize and read the pages:
 
 ```sh
+mkdir -p /tmp/proof                                          # pdftoppm won't create it
 pdftoppm -r 40 -png book/<snapshot>/book.pdf /tmp/proof/p     # p-01.png, p-02.png …
 pdftoppm -r 30 -png book/<snapshot>/sheets.pdf /tmp/proof/s   # the imposed sheets
 pdfinfo  book/<snapshot>/book.pdf                              # page count and page size

@@ -14,20 +14,9 @@ This is a self-contained copy of Vercel's `web-design-guidelines` skill. The ups
 ## How It Works
 
 1. Read the rules from `reference/command.md` (this skill's directory). Do **not** fetch them from the network.
-2. Read the specified files (or ask the user for files/pattern).
+2. Glob/read the files given in `$ARGUMENTS`. If none are given, ask the user which files to review.
 3. Check against every rule in the `## Rules` section, including the `### Anti-patterns` list.
-4. Output findings in the terse `file:line` format described in the `## Output Format` section of `reference/command.md`.
-
-## Usage
-
-When a user provides a file or pattern argument (`$ARGUMENTS`):
-
-1. Read `reference/command.md`.
-2. Glob/read the specified files.
-3. Apply all rules.
-4. Output findings grouped by file, `file:line - finding`, terse. Files with no issues get `✓ pass`. No preamble.
-
-If no files are specified, ask the user which files to review.
+4. Output findings in the terse format from the `## Output Format` section of `reference/command.md`: grouped by file, `file:line - finding`; files with no issues get `✓ pass`. No preamble.
 
 ## Notes
 

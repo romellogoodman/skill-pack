@@ -1,6 +1,6 @@
 # Palettes
 
-Seven complete looks. **Pick one per explainer and commit to it** — including the type pairing and the character notes, which are what actually separate them. Rotate: if the last explainer was Paper & Ink, don't reach for it again. Deriving a seventh from the subject matter is better than any of these; these exist so the default is never "the same page in a different color."
+Seven complete looks. **Pick one per explainer and commit to it** — including the type pairing and the character notes, which are what actually separate them. Match the subject rather than reaching for the first one listed. Deriving an eighth from the subject matter is better than any of these; these exist so the default is never "the same page in a different color."
 
 Each block drops into `App.scss` (proto mode) or the page `<style>` (single-file mode). Every palette defines the same token names, so `explainer-kit.scss` / `explainer-kit.html` inherit whichever you choose without edits.
 
@@ -316,5 +316,6 @@ Match the palette to the subject rather than cycling blindly:
 | Counterintuitive or playful | Risograph |
 | Comparison, myth-busting | Newsprint |
 | Human process, learning | Clay |
+| Prose argument proved by two or three figures | Quarto |
 
-Then change one thing so it isn't stock: a display face, an accent shifted 20°, a border treatment. State in your handoff which palette you used, so the next explainer picks a different one.
+Then change one thing so it isn't stock: a display face, an accent shifted 20°, a border treatment. State in your handoff which palette you used.

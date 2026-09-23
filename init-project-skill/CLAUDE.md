@@ -49,6 +49,10 @@ This single-file approach is intentional for rapid prototyping. Refactor into mu
 
 Available variables defined in `src/App.scss`:
 
+- `--color-text`, `--color-text-light`, `--color-bg`
+- `--font-size-base`, `--font-size-xl`
+- `--spacing-unit`, `--spacing-2x`, `--spacing-3x`
+
 ## Environment Variables
 
 - Copy `.env.example` to `.env.local` for local configuration
@@ -56,6 +60,7 @@ Available variables defined in `src/App.scss`:
 - Access in code: `import.meta.env.VITE_API_URL`
 
 Example:
+
 ```jsx
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 ```

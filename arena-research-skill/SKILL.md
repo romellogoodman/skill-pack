@@ -30,7 +30,7 @@ All verified against the live API. `$Q` is the query, `$SLUG`/`$ID` the target.
 ```bash
 curl -sG "https://api.are.na/v2/search/channels" --data-urlencode "q=$Q" -d per=24 |
   jq -r '.channels | sort_by(-.length) | .[] |
-    "\(.length) items | \(.title) | are.na/\(.user.slug)/\(.slug) | updated \(.updated_at[0:10])"'
+    "\(.length) items | \(.title) | are.na/\(.user.slug)/\(.slug) | updated \((.updated_at // "")[0:10])"'
 ```
 
 v2 has no reliable server-side sort — sort client-side. `sort_by(-.length)` surfaces the deepest collections first.
@@ -72,6 +72,8 @@ curl -s "https://api.are.na/v3/channels/$SLUG" |
 curl -s "https://api.are.na/v3/channels/$SLUG/contents?per=100" |
   jq -r '.data[] | "\(.id) [\(.type)] \(.title // "untitled") | \(.source.url // "")"'
 ```
+
+One page is at most 100 items. For deeper channels, repeat with `&page=2`, `3`, … while `.meta.has_more_pages` is true (`.meta.total_count` gives the size up front). Page through up to ~500 items; past that, read the first five pages and say in the briefing how much of the channel you actually read.
 
 The `type` query param is ignored by the server — filter client-side with jq. For only external links (the most valuable for deep-dives):
 
@@ -158,6 +160,7 @@ Cite everything with are.na URLs so the user can walk the same path. If the user
 ## Notes
 
 - Stay polite with the API: batch what you can into `per=100` pages and don't re-fetch what you already have. On a 429, back off until the `X-RateLimit-Reset` timestamp.
+- Budget: a full research loop is roughly 25–40 requests (searches, 3–5 channels with paging, a handful of connections and profiles). Unauthenticated that's over a minute of the 30/min limit — pace the calls, or suggest `ARENA_READ_TOKEN` if the user does this often.
 - Too many shallow results? Try more specific practitioner vocabulary. Too few? Broaden to the umbrella category or search for a known thinker and explore outward from their channels.
 - `visibility: "closed"` channels are still readable (closed means others can't add to them); `private` channels 403 unless the request carries a token whose owner has access.
 - The v3 API is labeled work-in-progress by Are.na — if a recipe fails, check the raw response shape before assuming the resource is missing.

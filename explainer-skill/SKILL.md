@@ -51,7 +51,7 @@ If the topic is factual and you are not certain — an API's semantics, a spec, 
 
 One `.html` file, everything inline. Paste in `assets/explainer-kit.html` (the `<style>` and `<script>` blocks, verbatim) and write the page around it.
 
-To publish: **load the `artifact-design` skill first**, then write the file and call `Artifact`. Constraints that bite — a strict CSP blocks every external request, so inline all CSS/JS and embed images as data URIs; no `<!DOCTYPE>`/`<html>`/`<head>`/`<body>` tags of your own; the page must be theme-aware. The kit's clipboard fallback exists because artifacts render in an iframe where the clipboard API is sometimes blocked; leave it in.
+To publish: **load the `artifact-design` skill first** and follow its page contract (allowed hosts, document structure, theming) — it's the current source of truth, so don't work from memory of it. Then write the file and call `Artifact`. The kit's clipboard fallback exists because artifacts render in an iframe where the clipboard API is sometimes blocked; leave it in.
 
 To just hand over a file, write it anywhere sensible and give the path.
 
@@ -82,7 +82,7 @@ Respect the boilerplate's `CLAUDE.md`: components in `src/App.jsx`, styles in `s
 
 ## Step 4 — Design it like it matters
 
-**Read `reference/palettes.md` and pick a palette** matched to the subject, then change one thing so it isn't stock. Rotate — if the last explainer was Paper & Ink, use something else. Say which one you used in your handoff. Every explainer looking identical is the failure mode this file exists to prevent.
+**Read `reference/palettes.md` and pick a palette** matched to the subject — not the first one listed — then change one thing so it isn't stock. Say which one you used in your handoff. Every explainer looking identical is the failure mode this file exists to prevent.
 
 For heavier visual work load the `frontend-design` skill (proto mode) or `artifact-design` (single-file); for diagrams, `artifact-diagramming`.
 
@@ -125,7 +125,7 @@ Open the page and drive it. Do not ship an unopened explainer.
 - Proto: `npx vite --port 8123` then load `http://localhost:8123/`.
 - Single-file: open the file, or the artifact URL.
 
-If Chrome DevTools MCP is available, drive it there; otherwise ask the user to click through. Check:
+Drive it yourself: Chrome DevTools MCP if it's connected, otherwise load the `claude-in-chrome` skill. Only if neither is available, ask the user to click through — and say in the handoff that the page is unverified. Check:
 
 1. Console is clean.
 2. Every interactive responds, and the tooltips position on-screen near their term.

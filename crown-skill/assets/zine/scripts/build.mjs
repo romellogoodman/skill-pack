@@ -62,7 +62,8 @@ const pages = doc.getPageCount();
 const [first] = doc.getPages();
 const w = +(first.getWidth() / 72).toFixed(3);
 const h = +(first.getHeight() / 72).toFixed(3);
-if (w !== TRIM.w || h !== TRIM.h) {
+// 0.01 in tolerance: a sixth-letter page is 3.667 in, written 3.67 everywhere
+if (Math.abs(w - TRIM.w) > 0.01 || Math.abs(h - TRIM.h) > 0.01) {
   console.warn(`⚠️  trim is ${w} × ${h} in, expected ${TRIM.w} × ${TRIM.h} — check @page in src/styles.css`);
 }
 

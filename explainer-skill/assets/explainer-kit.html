@@ -219,7 +219,8 @@
 (function () {
   "use strict";
 
-  var KEY = "explainer:" + slug(document.title || "untitled");
+  // pathname + title: explainers served from one origin (localhost, file://) must not share state
+  var KEY = "explainer:" + slug(location.pathname) + ":" + slug(document.title || "untitled");
   var custom = [];
   var touched = Object.create(null);
   var tip = null;

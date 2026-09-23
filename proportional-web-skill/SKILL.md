@@ -25,7 +25,7 @@ UPSTREAM.md                    provenance, pins, how to pull updates from GitHub
 
 ## Steps
 
-1. **Read `reference/markup.md`.** It's short and it is the contract — headings are `h1`/`h2`/`h3` for chapter/section/sub-section, asides go *after* their paragraph, blockquotes get their quote marks from CSS, `lang` is required for hyphenation, and so on. Skim `reference/index.md` if you want the author's rationale for a choice.
+1. **Read `reference/markup.md`.** It is the contract — headings are `h1`/`h2`/`h3` for chapter/section/sub-section, asides go *after* their paragraph, blockquotes get their quote marks from CSS, `lang` is required for hyphenation, and so on. Skim `reference/index.md` if you want the author's rationale for a choice.
 
 2. **Install the stylesheet into the project.** Copy the directory as upstream's own instructions expect:
    ```sh
@@ -47,8 +47,8 @@ UPSTREAM.md                    provenance, pins, how to pull updates from GitHub
        -V 'header-includes=<script src="the-proportional-web/index.js"></script>' \
        --no-highlight -i input.md -o output.html
      ```
-     Pandoc emits exactly the markup the CSS expects (`.header-section-number`, `#TOC`, `.toc-section-number`). Use `assets/pandoc-template.html` with `--template` if you want the header block and no default Pandoc CSS. In Markdown, `[Name]{.canonical-name}` and raw `<aside>`/`<abbr>` HTML pass through.
-   - **Single-file page or Artifact:** inline `index.css` into a `<style>` and `index.js` into a `<script>`; the Google Fonts `@import` at the top of the CSS keeps working (artifacts allow that host).
+     This is upstream's own command, verbatim. `--no-highlight` is there because the stylesheet has no syntax-highlighting colors; if code needs highlighting, `reference/index.md` points to the template route. Pandoc emits exactly the markup the CSS expects (`.header-section-number`, `#TOC`, `.toc-section-number`). Use `assets/pandoc-template.html` with `--template` if you want the header block and no default Pandoc CSS. In Markdown, `[Name]{.canonical-name}` and raw `<aside>`/`<abbr>` HTML pass through.
+   - **Single-file page or Artifact:** inline `index.css` into a `<style>` and `index.js` into a `<script>`; the Google Fonts `@import` at the top of the CSS keeps working (artifacts allow that host). For an Artifact, load the `artifact-design` skill and follow its page contract — which requires dark mode, so always add the two-token flip from the Notes below (under its theme selectors) even if the user didn't ask for it.
 
 4. **Check it.** Open the result in a browser at a wide (≥ 1300px) and a narrow (≤ 480px) width. Wide: asides sit in the right margin aligned to their paragraph, body is centered. Narrow: root drops to 14px, asides collapse inline with ❧. Look for justification rivers — if a passage is bad, add `&shy;` to the offending words, or fall back to `p { text-align: left }` in your override sheet. Confirm `<html lang="…">` is set, or nothing hyphenates.
 
@@ -57,6 +57,6 @@ UPSTREAM.md                    provenance, pins, how to pull updates from GitHub
 ## Notes
 
 - Fonts (Alegreya, Alegreya SC, Courier Prime — all SIL OFL) load from Google Fonts via `@import` in `index.css`. The *skill* is offline; the *page* fetches ~170 kB of fonts. To make the page offline too, self-host them and replace that one `@import` line in an override.
-- Colors are `--text-color: #000` / `--background-color: #fff` and nothing else. If asked for dark mode, flip only those two tokens under `prefers-color-scheme: dark`; don't introduce accent colors — that's the design.
+- Colors are `--text-color: #000` / `--background-color: #fff` and nothing else. If asked for dark mode — or publishing as an Artifact, which always needs it — flip only those two tokens under `prefers-color-scheme: dark`; don't introduce accent colors — that's the design.
 - If `$ARGUMENTS` names a file (`.md` or `.html`), treat it as the source to typeset. If it names a directory, look for the project's existing prose (README, docs, posts) and ask what to typeset if unclear.
 - To review an existing page for conformance rather than build one, read `reference/markup.md` and check the page against it; report `file:line` findings.

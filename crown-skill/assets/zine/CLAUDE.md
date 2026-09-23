@@ -1,6 +1,6 @@
 # My Book
 
-A quarter-letter zine (4.25 × 5.5 in, 8 pages) — one line on what it is —
+A quarter-letter zine (4.25 × 5.5 in, <N> pages) — one line on what it is —
 built with **crown** (`../crown`, linked via `file:`) and PrinceXML.
 README.md has the page plan and print specs.
 
@@ -9,7 +9,7 @@ README.md has the page plan and print specs.
 - `npm run build` — crown build + decoy strip + snapshot + `crown layout`
   → `book/my-book.<stamp>/book.pdf` (proof) and `sheets.pdf` (print)
 - `npm run build:raw` — crown only → `dist/book.pdf`, decoy still attached
-- `npm run dev` — live preview at localhost:3004
+- `npm run dev` — live preview at localhost:<port> (`devServer.port` in `crown.config.js`)
 - Requires `prince` on PATH (`brew install --cask prince`)
 
 ## Map
@@ -36,5 +36,5 @@ README.md has the page plan and print specs.
 - `order` is a YAML number. Source Markdown uses real typographic quotes
   and dashes — crown does no smart-quote conversion.
 - After any change, rebuild and proof the snapshot PDF page by page
-  (`pdftoppm -r 40 -png book/<snapshot>/book.pdf /tmp/proof/p`), not just
+  (`mkdir -p /tmp/proof && pdftoppm -r 40 -png book/<snapshot>/book.pdf /tmp/proof/p`), not just
   the build output.

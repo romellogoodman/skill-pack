@@ -155,7 +155,7 @@ Vanilla mounts it automatically — suppress with `data-ex-nobar` on `<body>` an
 
 One click copies straight to the clipboard and shows a toast. The `.ex-recover` panel appears only if the browser blocks the clipboard: non-modal, text pre-selected. Reset clears storage and reloads.
 
-State persists to `localStorage` under `explainer:<slug of title>`, wrapped so a sandboxed frame degrades to a working-but-not-sticky page.
+State persists to `localStorage` under `explainer:<slug of path>:<slug of title>` (the page's `<title>`, or `<ExplainerProvider title>` in React), wrapped so a sandboxed frame degrades to a working-but-not-sticky page. Give every explainer its own title — two explainers served from the same path (every proto project is `/` on `localhost:8123`) with the same title share saved state.
 
 ---
 

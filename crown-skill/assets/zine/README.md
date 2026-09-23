@@ -7,7 +7,7 @@ One paragraph on what the book is. Built with [crown](../crown) and PrinceXML.
 ```bash
 npm install       # crown is linked from ../crown
 npm run build     # → book/my-book.<stamp>/{book,sheets}.pdf
-npm run dev       # live preview at localhost:3004
+npm run dev       # live preview at localhost:<port> (devServer.port in crown.config.js)
 ```
 
 Requires [PrinceXML](https://www.princexml.com/) on your PATH

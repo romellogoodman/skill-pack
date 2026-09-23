@@ -99,7 +99,11 @@ export const useExplainer = () => {
 };
 
 export function ExplainerProvider({ title, children }) {
-  const storeKey = useMemo(() => `explainer:${slug(title || document.title)}`, [title]);
+  // pathname + title: explainers served from one origin (localhost:8123) must not share state
+  const storeKey = useMemo(
+    () => `explainer:${slug(location.pathname)}:${slug(title || document.title)}`,
+    [title]
+  );
   const savedRef = useRef(null);
   if (savedRef.current === null) savedRef.current = readStore(storeKey);
   const saved = savedRef.current;

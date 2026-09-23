@@ -1,36 +1,43 @@
 ---
 name: write-agent-docs
 description: Write or update CLAUDE.md, AGENTS.md, and agent_docs/ for the current project, applying humanlayer.dev's CLAUDE.md best practices. Use when the user asks to create, update, improve, or audit the docs that guide coding agents in this repo.
-allowed-tools: Read Write Edit Glob Bash(ls *) Bash(find *) Bash(rg *) Bash(grep *) Bash(cat *) Bash(wc *) Bash(head *) WebFetch
+allowed-tools: Read Write Edit Glob Grep Bash(ls *) Bash(find *) Bash(rg *) Bash(grep *) Bash(cat *) Bash(wc *) Bash(head *) Bash(ln *) WebFetch
 ---
 
 ## Goal
 
-Write or update CLAUDE.md (and any supporting agent-facing docs) for the current project, applying the principles from humanlayer.dev's CLAUDE.md best-practices guide.
+Write or update CLAUDE.md (and any supporting agent-facing docs) for the current project, applying the principles from humanlayer.dev's [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
+
+## Principles
+
+Summarized from the post (published 2025-11-25, last checked 2026-09-22). This summary is the working copy — no fetch needed. If the user asks for the latest guidance, fetch the post and note anything that changed.
+
+- Cover WHAT (stack, structure, a map of the codebase), WHY (what the project is for), HOW (tooling and how to verify a change — tests, typecheck, build).
+- Keep `CLAUDE.md` short: under 300 lines, under 60 when you can. Frontier models follow ~150–200 instructions reliably and the harness already spends ~50; every added line dilutes the rest.
+- Every line must apply to every task. Task-specific guidance goes in `agent_docs/<topic>.md`, listed in `CLAUDE.md` with a one-line description so the agent decides what to read (progressive disclosure).
+- Prefer pointers to copies: `file:line` references over pasted snippets, which go stale.
+- No style rules (indent width, quote style, trailing commas) — that's a linter's or a hook's job.
+- Don't list every command the agent might run, and don't use `CLAUDE.md` as a hotfix bin for one-off behavior corrections.
+- Don't paste `/init` output or other generated boilerplate. Write each line from what you verified in the repo.
 
 ## Steps
 
-1. **Read the source of truth.** Fetch https://www.humanlayer.dev/blog/writing-a-good-claude-md every time this skill runs — do not rely on memorized guidance. Internalize the current principles before touching any file.
+1. **Survey what exists.** Look for any existing `CLAUDE.md`, `AGENTS.md`, `agent_docs/`, `docs/`, `.claude/`, `README.md`. Also skim project metadata (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc.) so you understand the stack, entry points, and verification commands. Run the verification commands you intend to document, or confirm they exist in the scripts.
 
-2. **Survey what exists.** Look for any existing `CLAUDE.md`, `AGENTS.md`, `agent_docs/`, `docs/`, `.claude/`, `README.md`. Also skim project metadata (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc.) so you understand the stack, entry points, and verification commands.
+2. **Decide scope with the user.** Are you creating `CLAUDE.md` from scratch, editing an existing one, or adding a new `agent_docs/<topic>.md` file that `CLAUDE.md` will link to? If the user's ask is ambiguous, ask before writing.
 
-3. **Decide scope with the user.** Are you creating `CLAUDE.md` from scratch, editing an existing one, or adding a new `agent_docs/<topic>.md` file that `CLAUDE.md` will link to? If the user's ask is ambiguous, ask before writing.
+3. **Write it.** Prefer `Edit` for updates over `Write`. Only create new files when the content clearly belongs in a dedicated doc (progressive disclosure).
 
-4. **Apply the principles.** At minimum, enforce:
-   - Cover WHAT (project purpose), WHY (motivation/constraints), HOW (tech stack, verification commands — tests, typecheck, build).
-   - Keep `CLAUDE.md` concise. Target under 300 lines; aim for under 60 when you can.
-   - Every line must be universally applicable to every task. Task-specific guidance goes in `agent_docs/`, not `CLAUDE.md`.
-   - Use progressive disclosure: link to `agent_docs/<topic>.md` rather than inlining long content.
-   - Prefer `file:line` references over embedded code snippets — snippets go stale.
-   - No linter/style rules (indent width, quote style, trailing commas). That's the linter's job and it wastes the ~150–200-instruction budget frontier models follow reliably.
-   - Don't use `CLAUDE.md` as a hotfix bin for behavior corrections.
-   - Hand-craft it; do not autogenerate.
+4. **Report.** Summarize what changed, the resulting line count of `CLAUDE.md`, and call out anything that would be better placed in a separate `agent_docs/` file but isn't written yet — so the user can follow up.
 
-5. **Write it.** Prefer `Edit` for updates over `Write`. Only create new files when the content clearly belongs in a dedicated doc (progressive disclosure).
+## CLAUDE.md and AGENTS.md
 
-6. **Report.** Summarize what changed, the resulting line count of `CLAUDE.md`, and call out anything that would be better placed in a separate `agent_docs/` file but isn't written yet — so the user can follow up.
+Claude Code reads `CLAUDE.md`; most other agents (Codex, Cursor, Zed, OpenCode) read `AGENTS.md`. Keep one source of truth:
+
+- Only one exists → edit that one. Offer to add the other only if the user uses more than one agent.
+- Both exist with overlapping content → make `AGENTS.md` canonical and reduce `CLAUDE.md` to a single line, `@AGENTS.md` (Claude Code imports it), plus anything genuinely Claude-specific. Ask before collapsing an existing file.
+- Symlinking `CLAUDE.md → AGENTS.md` also works, but an import leaves room for Claude-only lines.
 
 ## Notes
 
-- If the repo uses `AGENTS.md` (the cross-agent convention) instead of or alongside `CLAUDE.md`, apply the same principles to whichever file the user is targeting.
 - If `$ARGUMENTS` is provided, treat it as scope guidance (e.g. "add a section on the new migration workflow" or "just update the verification commands").
