@@ -10,7 +10,7 @@ catalog — save an X thread or a YouTube video locally.
   catalog.py https://youtu.be/abc             video + transcript
   catalog.py <x-url> --transcribe             also transcribe the thread's videos
 
-Output goes to ~/Downloads/catalog/<name>/ unless -o is given.
+Output goes to ./<name>/ (the current directory) unless -o is given.
 X data comes from the public FxTwitter API (no login). Transcription runs
 locally with mlx-whisper; the model downloads once on first use.
 """
@@ -164,7 +164,7 @@ def catalog_youtube(url, out_root, want_transcript=True):
 def main():
     p = argparse.ArgumentParser(description="Save an X thread or YouTube video (with transcript).")
     p.add_argument("url")
-    p.add_argument("-o", "--out", type=Path, default=Path.home() / "Downloads" / "catalog")
+    p.add_argument("-o", "--out", type=Path, default=Path.cwd())
     p.add_argument("--transcribe", action="store_true", help="X: also transcribe videos in the thread")
     p.add_argument("--no-transcribe", action="store_true", help="YouTube: skip the transcript")
     args = p.parse_args()

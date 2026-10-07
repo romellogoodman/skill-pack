@@ -22,7 +22,7 @@ uv run --script <this skill's directory>/scripts/catalog.py "$URL" [flags]
 
 | Flag | Effect |
 | --- | --- |
-| `-o DIR` | Output root. Default `~/Downloads/catalog/` |
+| `-o DIR` | Output root. Default: the current directory |
 | `--transcribe` | X only: also transcribe each video in the thread |
 | `--no-transcribe` | YouTube only: skip the transcript |
 
