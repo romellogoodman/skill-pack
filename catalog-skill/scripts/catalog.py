@@ -1,17 +1,19 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["yt-dlp", "mlx-whisper"]
+# dependencies = ["yt-dlp", "mlx-whisper", "markdownify", "beautifulsoup4"]
 # ///
 """
-catalog — save an X thread or a YouTube video locally.
+catalog — save an X thread, a YouTube video or a Substack post locally.
 
   catalog.py https://x.com/user/status/123   text + images + videos for the whole thread
   catalog.py https://youtu.be/abc             video + transcript
+  catalog.py https://pub.substack.com/p/slug  post as markdown + its images
   catalog.py <x-url> --transcribe             also transcribe the thread's videos
 
 Output goes to ./<name>/ (the current directory) unless -o is given.
-X data comes from the public FxTwitter API (no login). Transcription runs
+X data comes from the public FxTwitter API and Substack posts from the
+publication's own post API (no login for either). Transcription runs
 locally with mlx-whisper; the model downloads once on first use.
 """
 
@@ -161,8 +163,96 @@ def catalog_youtube(url, out_root, want_transcript=True):
         transcribe(video, out_dir)
 
 
+# --- Substack ----------------------------------------------------------------
+
+def substack_api_url(url):
+    """Map any Substack post link to its post API endpoint."""
+    u = urllib.parse.urlparse(url)
+    host = u.netloc.lower()
+    # substack.com/home/post/p-123, substack.com/@user/p-123 (app links)
+    m = re.search(r"/p-(\d+)", u.path)
+    if host.endswith("substack.com") and m:
+        return f"https://substack.com/api/v1/posts/by-id/{m.group(1)}"
+    # open.substack.com/pub/<pub>/p/<slug> (share links)
+    m = re.match(r"/pub/([^/]+)/p/([^/]+)", u.path)
+    if m:
+        return f"https://{m.group(1)}.substack.com/api/v1/posts/{m.group(2)}"
+    # <pub>.substack.com/p/<slug>, or a custom domain
+    m = re.match(r"/p/([^/]+)", u.path)
+    if m:
+        return f"https://{host}/api/v1/posts/{m.group(1)}"
+    return None
+
+
+def original_image_url(src):
+    # substackcdn.com/image/fetch/<transforms>/<url-encoded original>
+    m = re.search(r"/image/fetch/[^/]*/(https?%3A.+)$", src)
+    return urllib.parse.unquote(m.group(1)) if m else src
+
+
+def catalog_substack(url, out_root):
+    from bs4 import BeautifulSoup
+    from markdownify import markdownify
+
+    api = substack_api_url(url)
+    if not api:
+        sys.exit("Couldn't find a post in that Substack URL (expected /p/<slug>).")
+    try:
+        data = json.loads(fetch(api))
+    except Exception as e:
+        sys.exit(f"Substack post API failed ({api}): {e}")
+    post = data.get("post", data)  # the by-id endpoint wraps the post
+
+    body = post.get("body_html") or ""
+    if len(body.strip()) < 40:
+        sys.exit(f"No usable body for this post (audience={post.get('audience')}); it may be paywalled.")
+
+    canonical = post.get("canonical_url") or url
+    pub = urllib.parse.urlparse(canonical).netloc.split(".")[0]
+    out_dir = out_root / f"substack-{pub}-{post['slug']}"
+    media_dir = out_dir / "media"
+    media_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "post.json").write_text(json.dumps(data, indent=2))
+    print(f"Substack: {post['title']} → {out_dir}")
+    if post.get("audience") != "everyone":
+        print(f"  note: audience is {post.get('audience')!r}, so the body may be a preview")
+
+    soup = BeautifulSoup(body, "html.parser")
+    for tag in soup(["button", "svg", "source", "script", "style"]):
+        tag.decompose()
+    for a in soup.select("a.image-link"):  # Substack wraps each image in a link to itself
+        a.unwrap()
+    for i, img in enumerate(soup.find_all("img"), 1):
+        cdn = img.get("src", "")
+        if not cdn:
+            continue
+        src = original_image_url(cdn)
+        dest = media_dir / f"{i:02}{Path(urllib.parse.urlparse(src).path).suffix or '.jpg'}"
+        for candidate in dict.fromkeys([src, cdn]):  # older posts' buckets 403, so fall back to the CDN copy
+            try:
+                img["src"] = str(download(candidate, dest).relative_to(out_dir))
+                break
+            except Exception as e:
+                err = e
+        else:
+            print(f"  ! couldn't save image {i}: {err}")
+            img["src"] = src
+        for attr in ("srcset", "width", "height", "class", "data-attrs"):
+            img.attrs.pop(attr, None)
+
+    bylines = ", ".join(b["name"] for b in post.get("publishedBylines") or [])
+    header = [f"# {post['title']}", ""]
+    if post.get("subtitle"):
+        header += [f"*{post['subtitle']}*", ""]
+    header += [" · ".join(x for x in (bylines, (post.get("post_date") or "")[:10]) if x), "", f"<{canonical}>", ""]
+    md = markdownify(str(soup), heading_style="ATX", bullets="-")
+    md = re.sub(r"\n{3,}", "\n\n", md).strip()
+    (out_dir / "post.md").write_text("\n".join(header) + "\n" + md + "\n")
+    print("  wrote post.md")
+
+
 def main():
-    p = argparse.ArgumentParser(description="Save an X thread or YouTube video (with transcript).")
+    p = argparse.ArgumentParser(description="Save an X thread, YouTube video (with transcript) or Substack post.")
     p.add_argument("url")
     p.add_argument("-o", "--out", type=Path, default=Path.cwd())
     p.add_argument("--transcribe", action="store_true", help="X: also transcribe videos in the thread")
@@ -174,8 +264,10 @@ def main():
         catalog_x(args.url, args.out, args.transcribe)
     elif host in {"youtube.com", "youtu.be", "music.youtube.com"}:
         catalog_youtube(args.url, args.out, not args.no_transcribe)
+    elif host.endswith("substack.com") or substack_api_url(args.url):
+        catalog_substack(args.url, args.out)  # /p/<slug> on another host: try it as a custom domain
     else:
-        sys.exit(f"Don't know how to catalog {host!r} — expected an x.com or youtube.com URL.")
+        sys.exit(f"Don't know how to catalog {host!r} — expected an x.com, youtube.com or Substack URL.")
 
 
 if __name__ == "__main__":
